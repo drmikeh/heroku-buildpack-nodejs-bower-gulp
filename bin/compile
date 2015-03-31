@@ -194,10 +194,12 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
 
     if [ -n "$GULP_TASK" ]; then
       status "Found gulpfile, running gulp $GULP_TASK task"
-      $build_dir/node_modules/.bin/gulp $GULP_TASK
+      # $build_dir/node_modules/.bin/gulp $GULP_TASK
+      gulp $GULP_TASK
     else
       status "Found gulpfile, running gulp build task"
-      $build_dir/node_modules/.bin/gulp build
+      # $build_dir/node_modules/.bin/gulp build
+      gulp build
     fi
   else
     status "No gulpfile found"
