@@ -56,28 +56,6 @@ mv $build_dir/node-v$node_version-linux-x64 $build_dir/vendor/node
 chmod +x $build_dir/vendor/node/bin/*
 PATH=$PATH:$build_dir/vendor/node/bin
 
-status "Downloading and installing npm"
-npm install -g npm@latest > /dev/null 2>&1 | indent
-
-vendor_dir="$build_dir/vendor2" #cached vendor dir
-
-if [ -d $cache_dir/node/vendor/nasm ]; then
-  status "Copying nasm from cache"
-  cp -r $cache_dir/node/vendor/nasm $vendor_dir
-else
-  status "Installing nasm from source"
-  NVERSION="2.11"
-  curl http://www.nasm.us/pub/nasm/releasebuilds/$NVERSION/nasm-$NVERSION.tar.gz -s | tar xz
-  cd nasm-$NVERSION
-  ./configure >/dev/null 2>&1 && make >/dev/null 2>&1
-
-  mkdir -p $vendor_dir/nasm/bin
-  mv nasm $vendor_dir/nasm/bin
-  chmod +x $vendor_dir/nasm/bin/*
-fi
-PATH=$PATH:$vendor_dir/nasm/bin
-
-
 # Run subsequent node/npm commands from the build path
 cd $build_dir
 
@@ -116,7 +94,7 @@ fi
 
   status "Installing dependencies"
   # Make npm output to STDOUT instead of its default STDERR
-  npm install --userconfig $build_dir/.npmrc 2>&1 | indent
+  npm install --userconfig $build_dir/.npmrc --production 2>&1 | indent
 )
 
 # Persist goodies like node-version in the slug
@@ -180,10 +158,10 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
     fi
 
     # Install gulp globally
-    status "Installing gulp globally"
-    npm install -g gulp 2>&1 | indent
-    npm install -g gulp-util 2>&1 | indent
-    status "gulp globally installed"
+    # status "Installing gulp globally"
+    # npm install -g gulp 2>&1 | indent
+    # npm install -g gulp-util 2>&1 | indent
+    # status "gulp globally installed"
 
     # Install gulp locally
     status "Updating gulp locally"
