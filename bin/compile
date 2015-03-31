@@ -81,76 +81,42 @@ PATH=$PATH:$vendor_dir/nasm/bin
 # Run subsequent node/npm commands from the build path
 cd $build_dir
 
+npm install bower
+echo "-----> Doing bower install thing"
+$build_dir/node_modules/.bin/bower install
+
 
 
 # If node_modules directory is checked into source control then
 # rebuild any native deps. Otherwise, restore from the build cache.
-if [ -d $build_dir/node_modules ]; then
+if test -d $build_dir/node_modules; then
   status "Found existing node_modules directory; skipping cache"
   status "Rebuilding any native dependencies"
   npm rebuild 2>&1 | indent
-elif [ -d $cache_dir/node/node_modules ]; then
+elif test -d $cache_dir/node/node_modules; then
   status "Restoring node_modules directory from cache"
   cp -r $cache_dir/node/node_modules $build_dir/
 
   status "Pruning cached dependencies not specified in package.json"
   npm prune 2>&1 | indent
 
-  if [ -f $cache_dir/node/.heroku/node-version ] && [ $(cat $cache_dir/node/.heroku/node-version) != "$node_version" ]; then
+  if test -f $cache_dir/node/.heroku/node-version && [ $(cat $cache_dir/node/.heroku/node-version) != "$node_version" ]; then
     status "Node version changed since last build; rebuilding dependencies"
     npm rebuild 2>&1 | indent
   fi
 
 fi
 
-# Decide if we will be looking at bower dependencies as well
-if [ -f $build_dir/bower.json ]; then
-  use_bower=yes
-
-  if [ -f $build_dir/.bowerrc ]; then
-    bower_dir=$(cat $build_dir/.bowerrc | $bp_dir/vendor/jq -r .directory)
-    if [ "$bower_dir" == "null" ]; then
-      unset bower_dir
-    fi
-  fi
-  bower_dir=${bower_dir:=bower_components}
-
-  status "Found bower.json - Installing bower"
-
-  npm install -g bower 2>&1 | indent
-
-  # Copy cached bower_components back into the build tree and prune unless
-  # the directory is checked in already
-  if [ -d $build/$bower_dir ]; then
-    status "Found existing $bower_dir directory; skipping bower cache"
-  elif [ -d $cache_dir/node/bower_components ]; then
-    status "Restoring $bower_dir directory from cache"
-    cp -r $cache_dir/node/bower_components $build_dir/$bower_dir
-
-    status "Pruning cached dependencies not specified in bower.json"
-    node_modules/.bin/bower prune 2>&1 | indent
-  fi
-
-fi
-
-
-
-
-# Scope config var availability only to `npm install` & `bower install`
+# Scope config var availability only to `npm install`
 (
   if [ -d "$env_dir" ]; then
     status "Exporting config vars to environment"
     export_env_dir $env_dir
   fi
 
-  status "Installing npm dependencies"
+  status "Installing dependencies"
   # Make npm output to STDOUT instead of its default STDERR
-  npm install --force --userconfig $build_dir/.npmrc 2>&1 | indent
-
-  if [ $use_bower ]; then
-    status "Installing bower dependencies"
-    node_modules/.bin/bower install 2>&1 | indent
-  fi
+  npm install --userconfig $build_dir/.npmrc --production 2>&1 | indent
 )
 
 # Persist goodies like node-version in the slug
@@ -158,6 +124,25 @@ mkdir -p $build_dir/.heroku
 
 # Save resolved node version in the slug for later reference
 echo $node_version > $build_dir/.heroku/node-version
+
+# Purge node-related cached content, being careful not to purge the top-level
+# cache, for the sake of heroku-buildpack-multi apps.
+rm -rf $cache_dir/node_modules # (for apps still on the older caching strategy)
+rm -rf $cache_dir/node
+mkdir -p $cache_dir/node
+
+# If app has a node_modules directory, cache it.
+if test -d $build_dir/node_modules; then
+  status "Caching node_modules directory for future builds"
+  cp -r $build_dir/node_modules $cache_dir/node
+fi
+
+# Copy goodies to the cache
+cp -r $build_dir/.heroku $cache_dir/node
+
+status "Cleaning up node-gyp and npm artifacts"
+rm -rf "$build_dir/.node-gyp"
+rm -rf "$build_dir/.npm"
 
 # If Procfile is absent, try to create one using `npm start`
 if [ ! -e $build_dir/Procfile ]; then
@@ -213,38 +198,6 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
     status "No gulpfile found"
   fi
 )
-
-# Purge node-related cached content, being careful not to purge the top-level
-# cache, for the sake of heroku-buildpack-multi apps.
-rm -rf $cache_dir/node_modules # (for apps still on the older caching strategy)
-rm -rf $cache_dir/node
-mkdir -p $cache_dir/node
-
-# If app has a node_modules directory, cache it.
-if [ -d $build_dir/node_modules ]; then
-  status "Caching node_modules directory for future builds"
-  cp -r $build_dir/node_modules $cache_dir/node
-fi
-
-# Also cache a $bower_dir if present
-if [ $use_bower ]; then
-  if [ -d $build_dir/$bower_dir ]; then
-    status "Caching $bower_dir directory for future builds"
-    cp -r $build_dir/$bower_dir/. $cache_dir/node/bower_components
-  fi
-fi
-# Also cache any compiled dependencies
-if [ -e $vendor_dir ]; then
-  status "Caching vendor directory for future builds"
-  cp -r $vendor_dir/. $cache_dir/node/vendor
-fi
-
-# Copy goodies to the cache
-cp -r $build_dir/.heroku $cache_dir/node
-
-#status "Cleaning up node-gyp and npm artifacts"
-rm -rf "$build_dir/.node-gyp"
-rm -rf "$build_dir/.npm"
 
 # Post package.json to nomnom service
 # Use a subshell so failures won't break the build.
