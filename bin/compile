@@ -158,10 +158,10 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
     fi
 
     # Install gulp globally
-    # status "Installing gulp globally"
-    # npm install -g gulp 2>&1 | indent
-    # npm install -g gulp-util 2>&1 | indent
-    # status "gulp globally installed"
+    status "Installing gulp globally"
+    npm install -g gulp 2>&1 | indent
+    npm install -g gulp-util 2>&1 | indent
+    status "gulp globally installed"
 
     # Install gulp locally
     status "Updating gulp locally"
