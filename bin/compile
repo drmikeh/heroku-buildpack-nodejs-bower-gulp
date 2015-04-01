@@ -166,10 +166,11 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
     # status "gulp globally installed"
 
     # Install gulp locally
-    status "Updating gulp locally"
     if [ -e node_modules/.bin/gulp ]; then
+      status "Updating gulp locally"
       npm update gulp 2>&1 | indent
     else
+      status "Installing gulp locally"
       npm install gulp 2>&1 | indent
     fi
 
