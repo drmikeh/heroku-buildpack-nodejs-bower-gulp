@@ -59,15 +59,14 @@ PATH=$PATH:$build_dir/vendor/node/bin
 # Run subsequent node/npm commands from the build path
 cd $build_dir
 
-status "-----> Forcibly deleting node_modules"
-rm -rf node_modules
+# status "Forcibly deleting node_modules"
+# rm -rf node_modules
 
-status "-----> Installing bower"
+status "Installing bower"
 npm install bower
 
-status "-----> Doing bower install thing"
+status "Doing bower install thing"
 $build_dir/node_modules/.bin/bower install
-
 
 # If node_modules directory is checked into source control then
 # rebuild any native deps. Otherwise, restore from the build cache.
@@ -161,10 +160,10 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
     fi
 
     # Install gulp globally
-    status "Installing gulp globally"
-    npm install -g gulp 2>&1 | indent
-    npm install -g gulp-util 2>&1 | indent
-    status "gulp globally installed"
+    # status "Installing gulp globally"
+    # npm install -g gulp 2>&1 | indent
+    # npm install -g gulp-util 2>&1 | indent
+    # status "gulp globally installed"
 
     # Install gulp locally
     status "Updating gulp locally"
@@ -176,12 +175,12 @@ echo "export PATH=\"\$HOME/vendor/node/bin:\$HOME/bin:\$HOME/node_modules/.bin:\
 
     if [ -n "$GULP_TASK" ]; then
       status "Found gulpfile, running gulp $GULP_TASK task"
-      # $build_dir/node_modules/.bin/gulp $GULP_TASK
-      gulp $GULP_TASK
+      $build_dir/node_modules/.bin/gulp $GULP_TASK
+      # gulp $GULP_TASK
     else
       status "Found gulpfile, running gulp build task"
-      # $build_dir/node_modules/.bin/gulp build
-      gulp build
+      $build_dir/node_modules/.bin/gulp build
+      # gulp build
     fi
   else
     status "No gulpfile found"
