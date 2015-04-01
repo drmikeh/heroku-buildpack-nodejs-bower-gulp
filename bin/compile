@@ -59,10 +59,14 @@ PATH=$PATH:$build_dir/vendor/node/bin
 # Run subsequent node/npm commands from the build path
 cd $build_dir
 
-npm install bower
-echo "-----> Doing bower install thing"
-$build_dir/node_modules/.bin/bower install
+status "-----> Forcibly deleting node_modules"
+rm -rf node_modules
 
+status "-----> Installing bower"
+npm install bower
+
+status "-----> Doing bower install thing"
+$build_dir/node_modules/.bin/bower install
 
 
 # If node_modules directory is checked into source control then
@@ -82,7 +86,6 @@ elif test -d $cache_dir/node/node_modules; then
     status "Node version changed since last build; rebuilding dependencies"
     npm rebuild 2>&1 | indent
   fi
-
 fi
 
 # Scope config var availability only to `npm install`
@@ -94,7 +97,7 @@ fi
 
   status "Installing dependencies"
   # Make npm output to STDOUT instead of its default STDERR
-  npm install --userconfig $build_dir/.npmrc --dev 2>&1 | indent
+  npm install --userconfig $build_dir/.npmrc 2>&1 | indent
 )
 
 # Persist goodies like node-version in the slug
